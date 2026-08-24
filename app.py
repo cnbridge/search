@@ -15,28 +15,107 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ページレイアウトの設定
-st.set_page_config(page_title="中国IC 代替・インサイト検索", page_icon="🇨🇳", layout="wide")
+st.set_page_config(page_title="CN Bridge - 中国IC・代替品 検索ポータル", page_icon="🇨🇳", layout="wide")
 
+# ==========================================
+# 🎨 ホームページ（cn-bridge.com）と完全に調和させるカスタムCSS
+# ==========================================
+st.markdown("""
+<style>
+    /* 全体の背景とフォント（ホームページと統一） */
+    .stApp {
+        background-color: #0c1117;
+        color: #aeb2b9;
+        font-family: 'Open Sans', sans-serif;
+    }
+    
+    /* 見出しのデザイン */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Montserrat', sans-serif !important;
+        color: #e0e6ec !important;
+    }
+    
+    /* 検索入力フィールド */
+    .stTextInput input {
+        background-color: #0c1117 !important;
+        color: #e0e6ec !important;
+        border: 1px solid #2e3a47 !important;
+        border-radius: 5px !important;
+        padding: 12px 15px !important;
+    }
+    .stTextInput input:focus {
+        border-color: #009944 !important;
+        box-shadow: 0 0 0 3px rgba(0, 153, 68, 0.2) !important;
+    }
+    
+    /* 検索ボタン（HPのボタンと完全一致） */
+    .stButton button {
+        background-color: #009944 !important;
+        color: #ffffff !important;
+        border: 2px solid #009944 !important;
+        border-radius: 5px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        transition: all 0.3s ease-in-out !important;
+        width: 100%;
+    }
+    .stButton button:hover {
+        background-color: transparent !important;
+        color: #00cc55 !important;
+        border-color: #00cc55 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 153, 68, 0.3);
+    }
+
+    /* 結果カード（HPの maker-card / service-card 風） */
+    div.streamlit-expanderHeader {
+        background-color: #1a2230 !important;
+        color: #e0e6ec !important;
+        border: 1px solid #2e3a47 !important;
+        border-top: 4px solid #009944 !important;
+        border-radius: 8px !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 600 !important;
+    }
+    div.streamlit-expanderContent {
+        background-color: #1a2230 !important;
+        color: #aeb2b9 !important;
+        border: 1px solid #2e3a47 !important;
+        border-top: none !important;
+        border-bottom-left-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
+    /* インフォメーションボックス */
+    .stAlert {
+        background-color: #1a2230 !important;
+        color: #e0e6ec !important;
+        border: 1px solid #2e3a47 !important;
+        border-left: 4px solid #009944 !important;
+        border-radius: 8px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 検索アプリのUI本体
 st.title("🇨🇳 中国IC 代替・インサイト検索ポータル")
-st.markdown("蓄積された中国製ICのスペック、欧米代替型番、ファームウェア実装インサイトを瞬時に検索できます。")
+st.markdown("データベースに蓄積された中国製半導体・電子部品のスペック、欧米代替型番、FWインサイトをリアルタイムで検索できます。")
 
-# 検索窓
 query = st.text_input("🔍 型番・メーカー・キーワードで検索（例: SC5617F, Southchip, Bluetooth）", "")
 
-if st.button("検索実行", type="primary"):
+if st.button("検索実行"):
     with st.spinner("データベースから検索中..."):
-        # Supabaseから全データを取得
         response = supabase.table("ic_components").select("*").execute()
         data = response.data
         
-        # キーワードフィルタリング
         if query:
             q = query.lower()
             filtered = [
                 row for row in data 
                 if q in str(row.get('part_number', '')).lower() 
                 or q in str(row.get('manufacturer', '')).lower() 
-                or q in str(row.get('description_jp', '')).lower()
+                or q in str(row.get('description_jp', '')).lower() 
                 or q in str(row.get('alternative_to', '')).lower()
                 or q in str(row.get('fw_insights', '')).lower()
             ]
@@ -45,7 +124,6 @@ if st.button("検索実行", type="primary"):
 
         st.success(f"🎉 **{len(filtered)} 件** のパーツが見つかりました！")
 
-        # 結果をカード形式で表示
         for item in filtered:
             part = item.get('part_number', '不明')
             maker = item.get('manufacturer', '不明')
